@@ -68,7 +68,7 @@ const InviteParticipants = ({ eventId, reload }) => {
 
       const newlyInvited = users
         .filter((u) => selected.includes(u._id))
-        .map((u) => ({ ...u, status: "invited" })); // mark new invites as invited
+        .map((u) => ({ ...u, status: "invited" })); 
 
       setInvited((prev) => [...prev, ...newlyInvited]);
       setUsers((prev) => prev.filter((u) => !selected.includes(u._id)));
@@ -79,18 +79,16 @@ const InviteParticipants = ({ eventId, reload }) => {
   };
 const handleRejectParticipant = async (participantId) => {
   try {
-    await axios.put(`${API_BASE}/api/events/${eventId}/participant/${participantId}/reject`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+     await axios.post(
+        `${API_BASE}/api/events/${eventId}/rsvp`,
+        { status: "declined", userId: user?.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
     toast.success("Participant rejected");
 
-    // Update local state to show declined
-    setInvited((prev) =>
-      prev.map((p) =>
-        p._id === participantId ? { ...p, status: "declined" } : p
-      )
-    );
+    
+    
   } catch (err) {
     console.error(err);
     toast.error("Failed to reject participant");

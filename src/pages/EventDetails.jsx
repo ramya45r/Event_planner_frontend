@@ -196,7 +196,6 @@ const EventDetails = () => {
         </div>
       </div>
 
-      {/* Participants */}
       <aside className="bg-white p-6 rounded-xl shadow-lg flex flex-col gap-4">
         <h4 className="font-semibold text-gray-800">Participants</h4>
         {role && <InviteParticipants eventId={id} reload={load} />}

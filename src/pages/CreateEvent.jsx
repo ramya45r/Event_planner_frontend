@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_BASE } from "../utils/constants";
+import LocationInput from "../components/LocationInput";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -13,13 +14,13 @@ const CreateEvent = () => {
     endTime: "",
     location: "",
   });
-  const [files, setFiles] = useState([]); // multiple files
-  const [previews, setPreviews] = useState([]); // array of previews
+  const [files, setFiles] = useState([]); 
+  const [previews, setPreviews] = useState([]); 
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
-  // Update previews when files change
   useEffect(() => {
     if (!files || files.length === 0) {
       setPreviews([]);
@@ -28,12 +29,11 @@ const CreateEvent = () => {
     const objectUrls = files.map((file) => URL.createObjectURL(file));
     setPreviews(objectUrls);
 
-    // Cleanup URLs when component unmounts or files change
     return () => objectUrls.forEach((url) => URL.revokeObjectURL(url));
   }, [files]);
 
   const handleFileChange = (e) => {
-    setFiles(Array.from(e.target.files)); // convert FileList to array
+    setFiles(Array.from(e.target.files));
   };
 
   const handleSubmit = async (e) => {
@@ -70,10 +70,14 @@ const CreateEvent = () => {
       className="flex justify-center items-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-100"
     >
       <motion.div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-lg border border-gray-100">
-        <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">Create New Event</h1>
+        <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">
+          Create New Event
+        </h1>
         <form className="space-y-5" onSubmit={handleSubmit}>
-  <div>
-            <label className="block text-gray-700 font-medium mb-1">Title</label>
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              Title
+            </label>
             <input
               name="title"
               value={form.title}
@@ -85,7 +89,9 @@ const CreateEvent = () => {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Description</label>
+            <label className="block text-gray-700 font-medium mb-1">
+              Description
+            </label>
             <textarea
               name="description"
               value={form.description}
@@ -98,7 +104,9 @@ const CreateEvent = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Start Time</label>
+              <label className="block text-gray-700 font-medium mb-1">
+                Start Time
+              </label>
               <input
                 type="datetime-local"
                 name="startTime"
@@ -109,7 +117,9 @@ const CreateEvent = () => {
               />
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">End Time</label>
+              <label className="block text-gray-700 font-medium mb-1">
+                End Time
+              </label>
               <input
                 type="datetime-local"
                 name="endTime"
@@ -122,17 +132,18 @@ const CreateEvent = () => {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Location</label>
-            <input
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              placeholder="Enter location"
-              className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition"
-            />
+            <label className="block text-gray-700 font-medium mb-1">
+              Location
+            </label>
+ <LocationInput
+  onSelect={(loc) => setForm({ ...form, location: loc.description })}
+/>
+
           </div>
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Upload Attachments</label>
+            <label className="block text-gray-700 font-medium mb-1">
+              Upload Attachments
+            </label>
             <input
               type="file"
               multiple
@@ -156,7 +167,9 @@ const CreateEvent = () => {
             whileTap={{ scale: 0.95 }}
             disabled={loading}
             className={`w-full py-3 rounded-lg font-semibold text-white transition ${
-              loading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg"
+              loading
+                ? "bg-indigo-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg"
             }`}
           >
             {loading ? "Creating..." : "Create Event"}
@@ -166,6 +179,5 @@ const CreateEvent = () => {
     </motion.div>
   );
 };
-
 
 export default CreateEvent;
