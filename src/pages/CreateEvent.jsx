@@ -3,7 +3,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_BASE } from "../utils/constants";
-import LocationInput from "../components/LocationInput";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -135,10 +134,13 @@ const CreateEvent = () => {
             <label className="block text-gray-700 font-medium mb-1">
               Location
             </label>
- <LocationInput
-  onSelect={(loc) => setForm({ ...form, location: loc.description })}
-/>
-
+            <input
+              name="location"
+              value={form.location}
+              onChange={handleChange}
+              placeholder="Enter location"
+              className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition"
+            />
           </div>
           <div>
             <label className="block text-gray-700 font-medium mb-1">
