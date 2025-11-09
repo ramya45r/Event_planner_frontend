@@ -1,27 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import { SOCKET_URL } from "../utils/constants";
+import { API_BASE } from "../utils/constants";
 
 export const useSocket = (roomId, onMessage) => {
-  const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
 
+  // Connect socket once
   useEffect(() => {
-    const s = io(SOCKET_URL, { transports: ["websocket"], autoConnect: false });
-    setSocket(s);
-    return () => s.disconnect();
-  }, []);
+    const socket = io(API_BASE, {
+      auth: { token: localStorage.getItem("token") },
+    });
+    socketRef.current = socket;
 
-  useEffect(() => {
-    if (!socket) return;
-    socket.connect();
-    if (roomId) socket.emit("joinRoom", roomId);
-    socket.on("chatMessage", onMessage);
+    socket.on("chatMessage", (msg) => {
+      if (onMessage) onMessage(msg);
+    });
+
     return () => {
-      if (roomId) socket.emit("leaveRoom", roomId);
-      socket.off("chatMessage", onMessage);
+      socket.disconnect();
     };
-  }, [socket, roomId, onMessage]);
+  }, [onMessage]);
 
-  const send = (payload) => socket?.emit("chatMessage", payload);
-  return { socket, send };
+  // Join/leave room whenever roomId changes
+  useEffect(() => {
+    if (!roomId || !socketRef.current) return;
+
+    socketRef.current.emit("joinRoom", roomId);
+
+    return () => {
+      socketRef.current.emit("leaveRoom", roomId);
+    };
+  }, [roomId]);
+
+  const send = (message, user) => {
+    if (socketRef.current && roomId) {
+      socketRef.current.emit("chatMessage", {
+        eventId: roomId,
+        user,
+        message,
+      });
+    }
+  };
+
+  return { send, socket: socketRef.current };
 };

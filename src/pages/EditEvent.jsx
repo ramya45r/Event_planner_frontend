@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_BASE } from "../utils/constants";
+import { toast } from "react-toastify";
 
-const CreateEvent = () => {
+const EditEvent = () => {
+  const { id } = useParams(); // event ID from URL
   const navigate = useNavigate();
   const [form, setForm] = useState({
     title: "",
@@ -13,28 +15,34 @@ const CreateEvent = () => {
     endTime: "",
     location: "",
   });
-  const [files, setFiles] = useState([]); // multiple files
-  const [previews, setPreviews] = useState([]); // array of previews
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  // Update previews when files change
+  // Fetch existing event data
   useEffect(() => {
-    if (!files || files.length === 0) {
-      setPreviews([]);
-      return;
-    }
-    const objectUrls = files.map((file) => URL.createObjectURL(file));
-    setPreviews(objectUrls);
+    const fetchEvent = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${API_BASE}/api/events/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const ev = res.data;
+        setForm({
+          title: ev.title || "",
+          description: ev.description || "",
+          startTime: ev.startTime ? ev.startTime.slice(0, 16) : "",
+          endTime: ev.endTime ? ev.endTime.slice(0, 16) : "",
+          location: ev.location || "",
+        });
+      } catch (err) {
+        console.error("Error fetching event:", err.response?.data || err.message);
+        toast.error("Failed to fetch event data");
+      }
+    };
+    fetchEvent();
+  }, [id]);
 
-    // Cleanup URLs when component unmounts or files change
-    return () => objectUrls.forEach((url) => URL.revokeObjectURL(url));
-  }, [files]);
-
-  const handleFileChange = (e) => {
-    setFiles(Array.from(e.target.files)); // convert FileList to array
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,21 +51,21 @@ const CreateEvent = () => {
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
-
       Object.keys(form).forEach((key) => formData.append(key, form[key]));
-      files.forEach((file) => formData.append("attachments", file));
+      if (file) formData.append("attachments", file);
 
-      await axios.post(`${API_BASE}/api/events/create`, formData, {
+      await axios.put(`${API_BASE}/api/events/${id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
 
+      toast.success("Event updated successfully!");
       navigate("/events");
     } catch (err) {
-      console.error(err.response?.data || err.message);
-      alert(err.response?.data?.message || "Failed to create event");
+      console.error("Error updating event:", err.response?.data || err.message);
+      toast.error(err.response?.data?.message || "Failed to update event");
     } finally {
       setLoading(false);
     }
@@ -69,17 +77,24 @@ const CreateEvent = () => {
       animate={{ opacity: 1, y: 0 }}
       className="flex justify-center items-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-100"
     >
-      <motion.div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-lg border border-gray-100">
-        <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">Create New Event</h1>
+      <motion.div
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-lg border border-gray-100"
+      >
+        <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">
+          Edit Event
+        </h1>
         <form className="space-y-5" onSubmit={handleSubmit}>
-  <div>
+          <div>
             <label className="block text-gray-700 font-medium mb-1">Title</label>
             <input
               name="title"
               value={form.title}
               onChange={handleChange}
               placeholder="Enter event title"
-              className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition"
+              className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition"
               required
             />
           </div>
@@ -91,7 +106,7 @@ const CreateEvent = () => {
               value={form.description}
               onChange={handleChange}
               placeholder="Describe your event..."
-              className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition"
+              className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition"
               rows={4}
             />
           </div>
@@ -131,24 +146,14 @@ const CreateEvent = () => {
               className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition"
             />
           </div>
+
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Upload Attachments</label>
+            <label className="block text-gray-700 font-medium mb-1">Upload Attachment</label>
             <input
               type="file"
-              multiple
-              onChange={handleFileChange}
+              onChange={(e) => setFile(e.target.files[0])}
               className="w-full border border-gray-300 rounded-lg p-2 cursor-pointer focus:ring-2 focus:ring-indigo-400 outline-none transition"
             />
-            <div className="flex flex-wrap mt-3 gap-2">
-              {previews.map((src, index) => (
-                <img
-                  key={index}
-                  src={src}
-                  alt={`Preview ${index}`}
-                  className="w-20 h-20 object-cover rounded-lg shadow"
-                />
-              ))}
-            </div>
           </div>
 
           <motion.button
@@ -156,10 +161,12 @@ const CreateEvent = () => {
             whileTap={{ scale: 0.95 }}
             disabled={loading}
             className={`w-full py-3 rounded-lg font-semibold text-white transition ${
-              loading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg"
+              loading
+                ? "bg-indigo-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg"
             }`}
           >
-            {loading ? "Creating..." : "Create Event"}
+            {loading ? "Updating..." : "Update Event"}
           </motion.button>
         </form>
       </motion.div>
@@ -167,5 +174,4 @@ const CreateEvent = () => {
   );
 };
 
-
-export default CreateEvent;
+export default EditEvent;
